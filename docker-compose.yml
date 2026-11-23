@@ -1,0 +1,41 @@
+# Whole stack: Qdrant + RAG API + UI.
+#   docker compose up -d --build                         start everything
+#   docker compose run --rm api python scripts/build_index.py   one-off jobs in the API image
+services:
+  qdrant:
+    image: qdrant/qdrant:v1.12.4
+    ports:
+      - "6333:6333"   # REST + dashboard: http://localhost:6333/dashboard
+      - "6334:6334"   # gRPC
+    volumes:
+      - qdrant_storage:/qdrant/storage
+    restart: unless-stopped
+
+  api:
+    build: ./rag
+    env_file: ./rag/.env            # your key and model slugs (never baked into the image)
+    environment:
+      VECTOR_BACKEND: qdrant
+      QDRANT_URL: http://qdrant:6333
+      CORS_ORIGINS: http://127.0.0.1:3000,http://localhost:3000
+    volumes:
+      - ./rag/data:/app/data        # corpus, artefacts, caches, index report, eval reports
+    ports:
+      - "8000:8000"
+    depends_on:
+      - qdrant
+    restart: unless-stopped
+
+  web:
+    build:
+      context: ./web
+      args:
+        NEXT_PUBLIC_API_BASE: http://127.0.0.1:8000
+    ports:
+      - "3000:3000"
+    depends_on:
+      - api
+    restart: unless-stopped
+
+volumes:
+  qdrant_storage:

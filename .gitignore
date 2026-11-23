@@ -1,0 +1,20 @@
+# secrets
+.env
+.env.local
+rag/.env
+# data, artefacts, caches, indexes (large; rebuildable)
+rag/data/
+# python
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+# node
+node_modules/
+web/.next/
+web/next-env.d.ts
+*.tsbuildinfo
+
+# corporate CA certs for docker builds
+rag/docker-certs/*.crt
+web/docker-certs/*.crt
