@@ -70,7 +70,6 @@ docker compose logs -f api              # API logs (use web or qdrant for the ot
 
 ```powershell
 docker compose run --rm api python -m eval.run_eval --api http://api:8000 --layers A --label baseline
-git add . ; git commit -m "Layer A baseline" ; git tag layer-a-baseline
 # ...change ONE lever in rag/.env (see "Stage 4 levers"), apply it (table above), then:
 docker compose run --rm api python -m eval.run_eval --api http://api:8000 --layers A --label fix1 --compare data/reports/baseline.json
 docker compose run --rm api python -m eval.run_eval --api http://api:8000 --layers B,C --sample 20 --label dev
@@ -78,7 +77,24 @@ docker compose run --rm api python -m eval.run_eval --api http://api:8000 --laye
 ```
 
 Reports land in `rag/data/reports/<label>.json|.md` with per-question results, the T2 and T4 tables, and
-the list of misses for Stage 4 diagnosis. Layer A never calls the generator.
+the list of misses for Stage 4 diagnosis. Open the `.md` file to read the results. Layer A never calls the
+generator.
+
+Things to know:
+
+- **The eval does not change any tracked files.** `rag/data/` (reports included) and `rag/.env` are in
+  `.gitignore`, so `git status` stays clean after a run. Look in `rag/data/reports/` for the output.
+- **The same settings give the same numbers.** Re-running without changing `rag/.env` or the index
+  reproduces the previous scores, because the embeddings are cached.
+- **Use a new `--label` for every run.** Reusing a label overwrites that report.
+- **Record which lever you changed for each label**, because `rag/.env` is not committed. The report header
+  shows the index settings (`table_context`, `lexical_weight`, ...).
+- **Tag your code only when you change Python code** between runs, so you can return to the version that
+  produced a given report. The tag keeps code only, not reports or `.env`:
+
+  ```powershell
+  git add . ; git commit -m "Layer A baseline" ; git tag layer-a-baseline
+  ```
 
 API endpoints: `POST /query`, `POST /retrieve`, `POST /retrieve/batch`, `GET /health`, `GET /examples`,
 `GET /artefact/{unit_id}`, `GET /units/{unit_id}`. Configuration problems return 503 with
